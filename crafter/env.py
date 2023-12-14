@@ -8,21 +8,15 @@ from . import objects
 from . import worldgen
 
 
-# Gym is an optional dependency.
-try:
-  import gym
-  DiscreteSpace = gym.spaces.Discrete
-  BoxSpace = gym.spaces.Box
-  DictSpace = gym.spaces.Dict
-  BaseClass = gym.Env
-except ImportError:
-  DiscreteSpace = collections.namedtuple('DiscreteSpace', 'n')
-  BoxSpace = collections.namedtuple('BoxSpace', 'low, high, shape, dtype')
-  DictSpace = collections.namedtuple('DictSpace', 'spaces')
-  BaseClass = object
+
+import gymnasium
+DiscreteSpace = gymnasium.spaces.Discrete
+BoxSpace = gymnasium.spaces.Box
+DictSpace = gymnasium.spaces.Dict
+BaseClass = gymnasium.Env
 
 
-class Env(BaseClass):
+class Env(gymnasium.Env):
 
   def __init__(
       self, area=(64, 64), view=(9, 9), size=(64, 64),
@@ -67,7 +61,7 @@ class Env(BaseClass):
   def action_names(self):
     return constants.actions
 
-  def reset(self):
+  def reset(self, seed=None):
     center = (self._world.area[0] // 2, self._world.area[1] // 2)
     self._episode += 1
     self._step = 0
@@ -78,7 +72,7 @@ class Env(BaseClass):
     self._world.add(self._player)
     self._unlocked = set()
     worldgen.generate_world(self._world, self._player)
-    return self._obs()
+    return self._obs(), {}
 
   def step(self, action):
     self._step += 1
@@ -115,7 +109,7 @@ class Env(BaseClass):
     }
     if not self._reward:
       reward = 0.0
-    return obs, reward, done, info
+    return obs, reward, dead, over, info
 
   def render(self, size=None):
     size = size or self._size
